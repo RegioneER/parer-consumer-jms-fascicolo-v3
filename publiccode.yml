@@ -20,7 +20,7 @@ description:
     longDescription: |
       Consumer JMS fascicolo v3 è una componente software ideata per consumare messaggi inviati su una particolare coda o JMS queue (ProducerCodaVersFascicoliQueue) alimentata dal flussi applicativi di Preingest e attraverso tale messaggio invocare l'apposito servizio di versamento fascicolo v3 (API REST)
     shortDescription: |-
-      Microservizio adibito al consumo dei messaggi inviati sulla coda ProducerCodaVersFascicoliQueue da parte di Preingest e al versamento dei fascicoli ricevuti nel messaggio ai webservice di versamento di Sacer.
+      Componente che consuma messaggi inviati su coda JMS da parte di Preingest e invoca l'API REST di versamento fascicolo v3.
 developmentStatus: stable
 intendedAudience:
   countries:
