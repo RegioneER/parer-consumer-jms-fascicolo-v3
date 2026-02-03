@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>it.eng.parer</groupId>
     <artifactId>consumer-jms-fascicolo-v3</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1-SNAPSHOT</version>
     <name>Micro WS - Versamento Fascicoli Broker</name>
     <url>https://nexus.ente.regione.emr.it/repository/parer-site/onsumer-jms-fascicolo-v3/${project.version}/</url>
 
@@ -35,7 +35,7 @@
 
     <scm>
         <developerConnection>scm:git:https://github.com/RegioneER/parer-consumer-jms-fascicolo-v3.git</developerConnection>
-        <tag>consumer-jms-fascicolo-v3-1.0.0</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <distributionManagement>
