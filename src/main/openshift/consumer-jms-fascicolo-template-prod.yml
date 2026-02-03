@@ -1,0 +1,461 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+labels:
+  app: consumer-jms-fascicolo-v3
+  template: consumer-jms-fascicolo-v3-quarkus
+metadata:
+  annotations:
+    description: |-
+      Template microservizio per consumare la coda di versamento fascicolo di Preingest e versare a Sacer i fascicoli inviati.
+    iconClass: icon-quarkus
+    openshift.io/display-name: Microservice consumer coda versamento fascicoli.
+    openshift.io/documentation-url: https://gitlab.ente.regione.emr.it/parer/okd/consumer-jms-fascicolo-v3
+    openshift.io/long-description: Il template fornisce la creazione del microservizio consumer-jms-fascicolo-v3
+    openshift.io/provider-display-name: Parer (Regione Emilia Romagna)
+    openshift.io/support-url: https://gitlab.ente.regione.emr.it/parer
+    tags: quarkus
+    template.openshift.io/bindable: "false"
+  name: consumer-jms-fascicolo-v3-quarkus
+objects:
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: consumer-jms-fascicolo-v3-secrets
+      labels:
+        app: consumer-jms-fascicolo-v3
+    stringData:
+      QUARKUS_DATASOURCE_PASSWORD: ${DATABASE_PASSWORD}
+      QUARKUS_DATASOURCE_USERNAME: ${DATABASE_USER}
+      QUARKUS_ARTEMIS_USERNAME: ${ARTEMIS_USER}
+      QUARKUS_ARTEMIS_PASSWORD: ${ARTEMIS_PASSWORD}
+      XF-OBJECT_AWS_ACCESSKEYID: ${OS_ACCESSID_NETAPP}
+      XF-OBJECT_AWS_SECRETKEY: ${OS_SECRET_NETAPP}
+      SA-BKT-SACERPING-RWD_GCP_ACCESSKEYID: ${OS_ACCESSID_GCP}
+      SA-BKT-SACERPING-RWD_GCP_SECRETKEY: ${OS_SECRET_GCP}
+      SA-BKT-RWD_MINIO_SECRETKEY: ${OS_SECRET_MINIO}
+      SA-BKT-RWD_MINIO_ACCESSKEYID: ${OS_SACCESSID_MINIO}
+      PARER_JMS_BRIDGE_TARGET-CONNECTION_USERNAME: ${ARTEMIS_USER}
+      PARER_JMS_BRIDGE_TARGET-CONNECTION_PASSWORD: ${ARTEMIS_PASSWORD}
+      PARER_JMS_SOURCE_NODE_USER: ${NODE_USER}
+      PARER_JMS_SOURCE_NODE_PASSWORD: ${NODE_PASSWORD}
+    type: Opaque
+  - apiVersion: v1
+    kind: Secret
+    data:
+      .dockerconfigjson: eyJhdXRocyI6eyJyZWdpc3RyeS5lbnRlLnJlZ2lvbmUuZW1yLml0L3BhcmVyLyI6eyJ1c2VybmFtZSI6Im9rZF9kZXBsb3kiLCJwYXNzd29yZCI6IlhUWkJ5V1lBQnZ4UVVMOFdreHFxIiwiZW1haWwiOiJnaXRsYWJAZGVwbG95LmxvY2FsIn19fQ==
+    metadata:
+      name: gitlab-registry-token
+    type: kubernetes.io/dockerconfigjson
+  - apiVersion: v1
+    kind: ConfigMap
+    data:
+      application.yaml: |-
+        "%${PROFILE}":
+          quarkus:
+            http:
+              port: 8080
+            shutdown:
+              timeout: "PT30S"
+            security:
+              users:
+                embedded:
+                  plain-text: false
+                  users:
+                    admin: "db0df53c9894a31b7defe5489028f236"
+                  roles: 
+                    admin: "admin"
+            datasource:
+              jdbc:
+                url: ${DATABASE_URL}
+            artemis:
+              url: ${ARTEMIS_URL}
+            rest-client:
+              versamento-sacer-client:
+                url: ${VERSAMENTO_SACER_URL}
+                connect-timeout: 30000
+                read-timeout: 60000
+          ftp:
+            root-dir: ${NFS_PATH}
+          parer:
+            jms:
+              bridge:
+                source-nodes:
+                  - nodeone
+                  - nodetwo
+                  - nodethree
+                  - nodefour
+                  - nodefive
+                  - nodesix
+                  - nodeseven
+                  - nodeeight
+                target-connection:
+                  url: ${ARTEMIS_URL}
+
+              source-nodes-config:
+                nodes:
+                  nodeone:
+                    host: pavasp01.ente.regione.emr.it
+                    port: 11001
+                    user: ${PARER_JMS_SOURCE_NODE_USER}
+                    password: ${PARER_JMS_SOURCE_NODE_PASSWORD}
+                  nodetwo:
+                    host: pavasp02.ente.regione.emr.it
+                    port: 11001
+                    user: ${PARER_JMS_SOURCE_NODE_USER}
+                    password: ${PARER_JMS_SOURCE_NODE_PASSWORD}
+                  nodethree:
+                    host: pavasp03.ente.regione.emr.it
+                    port: 11001
+                    user: ${PARER_JMS_SOURCE_NODE_USER}
+                    password: ${PARER_JMS_SOURCE_NODE_PASSWORD}
+                  nodefour:
+                    host: pavasp04.ente.regione.emr.it
+                    port: 11001
+                    user: ${PARER_JMS_SOURCE_NODE_USER}
+                    password: ${PARER_JMS_SOURCE_NODE_PASSWORD}
+                  nodefive:
+                    host: pavasp05.ente.regione.emr.it
+                    port: 11001
+                    user: ${PARER_JMS_SOURCE_NODE_USER}
+                    password: ${PARER_JMS_SOURCE_NODE_PASSWORD}
+                  nodesix:
+                    host: pavasp06.ente.regione.emr.it
+                    port: 11001
+                    user: ${PARER_JMS_SOURCE_NODE_USER}
+                    password: ${PARER_JMS_SOURCE_NODE_PASSWORD}
+                  nodeseven:
+                    host: pavasp07.ente.regione.emr.it
+                    port: 11001
+                    user: ${PARER_JMS_SOURCE_NODE_USER}
+                    password: ${PARER_JMS_SOURCE_NODE_PASSWORD}
+                  nodeeight:
+                    host: pavasp08.ente.regione.emr.it
+                    port: 11001
+                    user: ${PARER_JMS_SOURCE_NODE_USER}
+                    password: ${PARER_JMS_SOURCE_NODE_PASSWORD}
+    metadata:
+      labels:
+        app: consumer-jms-fascicolo-v3
+      name: consumer-jms-fascicolo-v3-config
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        app: consumer-jms-fascicolo-v3
+        expose: "true"
+      name: consumer-jms-fascicolo-v3-svc
+    spec:
+      ports:
+        - name: http
+          port: 8080
+          protocol: TCP
+          targetPort: 8080
+      selector:
+        app: consumer-jms-fascicolo-v3
+      sessionAffinity: None
+      type: ClusterIP
+  - apiVersion: v1
+    kind: Route
+    metadata:
+      annotations:
+        haproxy.router.openshift.io/timeout: 10m
+      labels:
+        app: consumer-jms-fascicolo-v3
+        expose: "true"
+      name: consumer-jms-fascicolo-v3-fqdn-path
+    spec:
+      host: ${FQDN_NAME}
+      path: ${ROOT_PATH}
+      port:
+        targetPort: http
+      tls:
+        termination: edge
+      to:
+        kind: Service
+        name: consumer-jms-fascicolo-v3-svc
+        weight: 100
+      wildcardPolicy: None
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      labels:
+        app: consumer-jms-fascicolo-v3
+        gl_log_application: consumer-jms-fascicolo-v3
+        gl_tags: ${AMBIENTE}
+        group: it.eng.parer
+      name: consumer-jms-fascicolo-v3
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: consumer-jms-fascicolo-v3
+      strategy:
+        rollingParams:
+          intervalSeconds: 1
+          maxSurge: 25%
+        resources:
+          limits:
+            cpu: 20m
+            memory: 50Mi
+          requests:
+            cpu: 10m
+            memory: 40Mi
+          maxUnavailable: 25%
+          timeoutSeconds: 3600
+          updatePeriodSeconds: 1
+        type: RollingUpdate
+      template:
+        metadata:
+          labels:
+            app: consumer-jms-fascicolo-v3
+            gl_log_application: consumer-jms-fascicolo-v3
+            gl_tags: ${AMBIENTE}
+            group: it.eng.parer
+        spec:
+          containers:
+            - env:
+                - name: QUARKUS_DATASOURCE_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      key:  QUARKUS_DATASOURCE_USERNAME
+                      name: consumer-jms-fascicolo-v3-secrets
+                - name: QUARKUS_DATASOURCE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: QUARKUS_DATASOURCE_PASSWORD
+                      name: consumer-jms-fascicolo-v3-secrets
+                - name: JAVA_OPTS_APPEND
+                  value: -Dfile.encoding=UTF-8 -Dquarkus.profile=${PROFILE}  -XX:+UnlockExperimentalVMOptions -XX:+UseContainerSupport -Dsun.zip.disableMemoryMapping=true -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.port=3000 -Dcom.sun.management.jmxremote.rmi.port=3001 -Djava.rmi.server.hostname=127.0.0.1 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false
+                - name: JAVA_MAX_MEM_RATIO
+                  value: "90"
+                - name: JAVA_INITIAL_MEM_RATIO
+                  value: "40"
+                - name: TZ
+                  value: Europe/Rome
+                - name: QUARKUS_ARTEMIS_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: consumer-jms-fascicolo-v3-secrets
+                      key: QUARKUS_ARTEMIS_USERNAME
+                - name: QUARKUS_ARTEMIS_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: consumer-jms-fascicolo-v3-secrets
+                      key: QUARKUS_ARTEMIS_PASSWORD
+                - name: PARER_JMS_BRIDGE_TARGET-CONNECTION_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: consumer-jms-fascicolo-v3-secrets
+                      key: PARER_JMS_BRIDGE_TARGET-CONNECTION_USERNAME
+                - name: PARER_JMS_BRIDGE_TARGET-CONNECTION_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: consumer-jms-fascicolo-v3-secrets
+                      key: PARER_JMS_BRIDGE_TARGET-CONNECTION_PASSWORD
+                - name: PARER_JMS_SOURCE_NODE_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: consumer-jms-fascicolo-v3-secrets
+                      key: PARER_JMS_SOURCE_NODE_USER
+                - name: PARER_JMS_SOURCE_NODE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: consumer-jms-fascicolo-v3-secrets
+                      key: PARER_JMS_SOURCE_NODE_PASSWORD
+                - name: XF-OBJECT_AWS_ACCESSKEYID
+                  valueFrom:
+                    secretKeyRef:
+                      name: consumer-jms-fascicolo-v3-secrets
+                      key: XF-OBJECT_AWS_ACCESSKEYID
+                - name: XF-OBJECT_AWS_SECRETKEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: consumer-jms-fascicolo-v3-secrets
+                      key: XF-OBJECT_AWS_SECRETKEY
+                - name: SA-BKT-SACERPING-RWD_GCP_ACCESSKEYID
+                  valueFrom:
+                    secretKeyRef:
+                      name: consumer-jms-fascicolo-v3-secrets
+                      key: SA-BKT-SACERPING-RWD_GCP_ACCESSKEYID
+                - name: SA-BKT-SACERPING-RWD_GCP_SECRETKEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: consumer-jms-fascicolo-v3-secrets
+                      key: SA-BKT-SACERPING-RWD_GCP_SECRETKEY
+                - name: SA-BKT-RWD_MINIO_ACCESSKEYID
+                  valueFrom:
+                    secretKeyRef:
+                      name: consumer-jms-fascicolo-v3-secrets
+                      key: SA-BKT-RWD_MINIO_ACCESSKEYID
+                - name: SA-BKT-RWD_MINIO_SECRETKEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: consumer-jms-fascicolo-v3-secrets
+                      key: SA-BKT-RWD_MINIO_SECRETKEY
+              image: registry.ente.regione.emr.it/parer/okd/consumer-jms-fascicolo-v3:${IMGTAG}
+              imagePullPolicy: Always
+              livenessProbe:
+                failureThreshold: 10
+                httpGet:
+                  path: ${ROOT_PATH}/q/health/live
+                  port: 8080
+                  scheme: HTTP
+                initialDelaySeconds: 180
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 180
+              name: consumer-jms-fascicolo-v3
+              securityContext:
+                runAsUser: 185
+                runAsGroup: 500
+              ports:
+                - containerPort: 8080
+                  protocol: TCP
+                - containerPort: 8443
+                  protocol: TCP
+              readinessProbe:
+                failureThreshold: 10
+                httpGet:
+                  path: ${ROOT_PATH}/q/health/ready
+                  port: 8080
+                  scheme: HTTP
+                initialDelaySeconds: 1
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 180
+              resources:
+                limits:
+                  cpu: 300m
+                  memory: 800Mi
+                requests:
+                  cpu: 100m
+                  memory: 500Mi
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+              volumeMounts:
+                - mountPath: /deployments/config
+                  name: consumer-jms-fascicolo-v3-config
+                  readOnly: true
+                - name: nfs-vol
+                  mountPath: ${NFS_PATH}
+          dnsPolicy: ClusterFirst
+          imagePullSecrets:
+            - name: gitlab-registry-token
+          restartPolicy: Always
+          serviceAccountName: ${OCP_SA_NAME}
+          schedulerName: default-scheduler
+          terminationGracePeriodSeconds: 30
+          volumes:
+            - configMap:
+                defaultMode: 420
+                name: consumer-jms-fascicolo-v3-config
+              name: consumer-jms-fascicolo-v3-config
+            - name: nfs-vol
+              nfs:
+                server: ${NFS_HOST}
+                path: ${NFS_PATH}
+      test: false
+      triggers:
+        - type: ConfigChange
+parameters:
+  - description: Nome dal tag dell'immagine da utilizzare (default latest)
+    displayName: Nome immagine
+    name: IMGTAG
+    required: false
+    value: latest
+  - description: Nome dell'ambiente o namespace (e.g. snap/test/pre/prod)
+    displayName: ambiente
+    name: AMBIENTE
+    required: false
+    value: snap
+  - description: Nome profilo quarkus
+    displayName: Nome profilo quarkus
+    name: PROFILE
+    required: true
+  - description: URL per accesso db
+    displayName: URL per accesso db
+    name: DATABASE_URL
+    required: true
+  - description: Nome utente per accesso db
+    displayName: Nome utente per accesso db
+    name: DATABASE_USER
+    required: true
+  - description: Password per accesso db
+    displayName: Password per accesso db
+    name: DATABASE_PASSWORD
+    required: true
+  - description: URL per server JMS Artemis
+    displayName: URL per server JMS Artemis
+    name: ARTEMIS_URL
+    required: true
+  - description: Utente per server JMS Artemis
+    displayName: Utente per server JMS Artemis
+    name: ARTEMIS_USER
+    required: true
+  - description: Password per server JMS Artemis
+    displayName: Password per server JMS Artemis
+    name: ARTEMIS_PASSWORD
+    required: true
+  - description: URL servizio versamento fascicoli v3
+    displayName: URL servizio versamento fascicoli v3
+    name: VERSAMENTO_SACER_URL
+    required: true
+  - description: AccessId per bucket versamento OS
+    displayName: AccessId per bucket versamento OS
+    name: OS_ACCESSID_NETAPP
+    required: true
+  - description: Password per bucket versamento OS NETAPP
+    displayName: Password per bucket versamento OS NETAPP
+    name: OS_SECRET_NETAPP
+    required: true
+  - description: AccessId per bucket versamento OS GCP
+    displayName: AccessId per bucket versamento OS GCP
+    name: OS_ACCESSID_GCP
+    required: true
+  - description: Password per bucket versamento OS GCP
+    displayName: Password per bucket versamento OS GCP
+    name: OS_SECRET_GCP
+    required: true
+  - description: AccessId per bucket versamento OS MINIO
+    displayName: AccessId per bucket versamento OS MINIO
+    name: OS_ACCESSID_MINIO
+    required: true
+  - description: Password per bucket versamento OS MINIO
+    displayName: Password per bucket versamento OS MINIO
+    name: OS_SECRET_MINIO
+    required: true
+  - description: FQDN_NAME
+    displayName: FQDN_NAME
+    required: true
+    name: FQDN_NAME
+    # value: ocp-snap.apps.test-parercaas.ente.regione.emr.it
+  - description: ROOT_PATH
+    displayName: ROOT_PATH
+    required: false
+    name: ROOT_PATH
+    value: /consumer-jms-fascicolo-v3
+  - description: NFS_HOST
+    displayName: NFS_HOST
+    required: true
+    name: NFS_HOST
+    # value: 10.101.130.61
+  - description: NFS_PATH
+    displayName: NFS_PATH
+    required: true
+    name: NFS_PATH
+    pattern: "^\\/[a-zA-Z0-9_\\-\\.\\/]+[a-zA-Z0-9_\\-\\.]$" # Strict Pattern
+    # Note: The backslashes are escaped for YAML. The actual regex is:
+    # "^\/[a-zA-Z0-9_\-\.\/]+[a-zA-Z0-9_\-\.]$"
+  - description: OCP_SA_NAME
+    displayName: OCP_SA_NAME
+    required: true
+    name: OCP_SA_NAME
+    # value: test-snap
+  - description: Utente per nodi JMS Artemis JBoss
+    displayName: Utente per nodi JMS Artemis JBoss
+    name: NODE_USER
+    required: true
+  - description: Password per nodi JMS Artemis JBoss
+    displayName: Password per nodi JMS Artemis JBoss
+    name: NODE_PASSWORD
+    required: true

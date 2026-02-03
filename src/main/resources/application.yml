@@ -1,0 +1,167 @@
+quarkus:
+  application:
+    name: "Micro WS - Versamento Fascicoli"
+  devservices:
+    enabled: false
+  http:
+    port: 8082
+    root-path: "/consumer-jms-fascicolo-v3"
+    auth:
+      basic: true
+      policy:
+        role-internal-policy:
+          roles-allowed: "admin"
+      permission:
+        internal:
+          paths: "admin/*,status"
+          policy: "role-internal-policy"
+        all:
+          paths: "/welcome"
+          policy: "permit"
+          methods: "GET"
+  security:
+    users:
+      embedded:
+        enabled: true
+  naming:
+    enable-jndi: true
+  artemis:
+    enabled: true
+  transaction-manager:
+    default-transaction-timeout: "31536000S" # impostato timeout a un anno rispetto il default (60S) per evitare problematiche di resultset chiusi prima del tempo
+  datasource:
+    db-kind: "oracle"
+    jdbc:
+      driver: "oracle.jdbc.driver.OracleDriver"
+  hibernate-orm:
+    packages: "it.eng.parer.versamentofascicoli.jpa.entities.sacerping"
+    database:
+      generation: "none"
+  smallrye-openapi:
+    info-title: "Micro WS - Versamento Fascicoli"
+  swagger-ui:
+    always-include: true
+    validator-url: "none"
+
+  #logging
+  log:
+    level: INFO
+    console:
+      json: false
+      format: "%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %X{log_uuid} %s%e%n"
+  index-dependency:
+    quarkuslogger:
+      group-id: "it.eng.parer"
+      artifact-id: "quarkus-custom-log-handlers"
+  # custom logger (single line throw)
+
+microprofile:
+  rest:
+    client:
+      disable:
+        default:
+          mapper: true
+  s3:
+    max-connections: 100
+    connections-timeout-minutes: 1
+    socket-timeout-minutes: 10
+
+parer:
+  quarkus:
+    config:
+      singleline-message:
+        enabled: true
+  fascicolo:
+    jms-polling-interval: 5000
+    env:
+      roottoskip: others
+      propstoskip: git.remote.origin.url git.build.host git.commit.user.name
+  jms:
+    bridge:
+      # Nodi source da cui leggere
+      source-nodes:
+        - nodeone
+        - nodetwo
+
+      # JNDI name per la coda source (come appare in JNDI)
+      source-queue-jndi: "source/queue"
+      # Nome fisico della coda sul server remoto
+      source-queue-physical: "jms.queue.ProducerCodaVersFascicoliQueue"
+
+      # JNDI name per la coda target (come appare in JNDI)
+      target-queue-jndi: "target/queue"
+      # Nome fisico della coda sul server locale
+      target-queue-physical: "ProducerCodaVersFascicoliQueue"
+
+      # Bridge configuration
+      quality-of-service: "ONCE_AND_ONLY_ONCE"  # o DUPLICATES_OK, AT_MOST_ONCE, ONCE_AND_ONLY_ONCE
+      max-batch-size: 10
+      max-batch-time: 1000
+      failure-retry-interval: 5000
+      max-retry-attempts: -1  # -1 = infinite
+
+"%dev":
+  quarkus:
+    http:
+      port: 8082
+    shutdown:
+      timeout: "PT1S"
+    hibernate-orm:
+      validate-in-dev-mode: false
+      log:
+        sql: false
+        format-sql: true
+    log:
+      level: INFO
+    rest-client:
+      versamento-sacer-client:
+        url: https://ocp-snap.apps.test-parercaas.ente.regione.emr.it/versamento-fascicolo-v3
+        connect-timeout: 30000
+        read-timeout: 60000
+    security:
+      users:
+        embedded:
+          plain-text: true
+          users:
+            admin: ${ADMIN_PASSWORD}
+          roles:
+            admin: "admin"
+  ftp:
+    root-dir: /ftp_root/SACERPING_SNAP
+  parer:
+    quarkus:
+      config:
+        singleline-message:
+          enabled: true
+    fascicolo:
+      jms-polling-interval: 5000
+      env:
+        roottoskip: others
+        propstoskip: git.remote.origin.url git.build.host git.commit.user.name
+    jms:
+      bridge:
+        # Connessione al server target (locale)
+        target-connection:
+          url: "tcp://localhost:61616"
+          username: "artemis"
+          password: "artemis"
+
+      source-nodes-config:
+        nodes:
+          nodeone:
+            host: "pavasb01.ente.regione.emr.it"
+            port: 11001
+          nodetwo:
+            host: "pavasb02.ente.regione.emr.it"
+            port: 11001
+
+"%test":
+  quarkus:
+    http:
+      test-port: 0
+    datasource:
+      jdbc:
+        url: none
+
+  ftp:
+    root-dir: /ftp_root/SACERPING_SNAP
